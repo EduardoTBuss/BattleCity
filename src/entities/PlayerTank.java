@@ -25,6 +25,10 @@ public class PlayerTank extends Tank {
         }
     }
 
+    public void setHealth(int health) {
+        this.health = health;
+    }
+
     public void setPosition(int x, int y) {
         this.x = x;
         this.y = y;

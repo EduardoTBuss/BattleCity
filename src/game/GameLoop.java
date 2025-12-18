@@ -17,16 +17,16 @@ public class GameLoop extends Thread {
     private PlayerTank player;
     private InputHandler input;
 
-    private List<EnemyTank> enemies = new ArrayList<>();
-    private List<Entity> entities = new ArrayList<>();
+    private final List<EnemyTank> enemies = new ArrayList<>();
+    private final List<Entity> entities = new ArrayList<>();
 
     private volatile boolean running = true;
 
-    private int width = 45;
-    private int height = 20;
+    private final int width = 45;
+    private final int height = 20;
 
     private int level = 1;
-    private int tankCount = 3;
+    private int tankCount = 2;
 
     public static int kills = 0;
     public static boolean hardMode = false;
@@ -38,11 +38,13 @@ public class GameLoop extends Thread {
 
     @Override
     public void run() {
+
         while (running) {
 
             Renderer.draw(map, entities);
 
             if (player.getHealth() <= 0) {
+                clearScreen();
                 System.out.println("=== GAME OVER ===");
                 System.out.println("Level reached: " + level);
                 System.out.println("Final score: " + getScore());
@@ -56,7 +58,11 @@ public class GameLoop extends Thread {
 
             if (enemies.isEmpty()) {
                 level++;
-                if (level % 2 == 0) tankCount++;
+
+                if (level % 2 == 0) {
+                    tankCount++;
+                }
+
                 showLevelStats();
                 waitForSpace();
                 startLevel(false);
@@ -67,56 +73,63 @@ public class GameLoop extends Thread {
     }
 
     private void startLevel(boolean first) {
-        map = new Map(width, height);
 
-        enemies.clear();
-        entities.clear();
+        int savedHealth = 3;
 
-        if (first) {
-            player = new PlayerTank(width / 2, height / 2, entities, map);
-        } else {
-            restorePlayerHealth();
-            player.setPosition(width / 2, height / 2);
+        if (!first && player != null) {
+            savedHealth = player.getHealth();
         }
 
+        destroyLevel();
+
+        map = new Map(width, height);
+
+        player = new PlayerTank(width / 2, height / 2, entities, map);
+
+        if (!first) {
+            if (level < 10) {
+                savedHealth = 3;
+            } else if (level <= 20) {
+                savedHealth = Math.min(3, savedHealth + 1);
+            }
+        }
+
+        player.setHealth(savedHealth);
         entities.add(player);
+
         Spawner.spawnEnemies(enemies, entities, map, tankCount);
     }
 
-    private void restorePlayerHealth() {
-        if (level < 10) {
-            player.restoreFullHealth();
-            return;
+    private void destroyLevel() {
+
+        for (EnemyTank e : enemies) {
+            e.stopAI();
         }
 
-        if (level <= 20) {
-            player.restoreOneHealth();
-        }
+        enemies.clear();
+        entities.clear();
     }
 
-    private void showLevelStats() {
-        clearScreen();
-        System.out.println("=== LEVEL " + level + " ===");
-        System.out.println("Score: " + getScore());
-        System.out.println("Kills: " + kills);
-        System.out.println("Enemy tanks: " + tankCount);
-        System.out.println("Health: " + player.getHealth());
-        System.out.println();
-        System.out.println("Press SPACE to continue");
-    }
+    private void updateEntities() {
 
-    private int getScore() {
-        return kills * 100 + level * 50;
-    }
+        List<Entity> snapshot = new ArrayList<>(entities);
 
-    private void waitForSpace() {
-        while (true) {
-            if (input.poll() == ' ') break;
-            sleepLoop(30);
+        for (Entity e : snapshot) {
+            e.update(hardMode);
+
+            if (e.isDestroyed()) {
+                entities.remove(e);
+
+                if (e instanceof EnemyTank) {
+                    enemies.remove(e);
+                    kills++;
+                }
+            }
         }
     }
 
     private void handlePlayer(char input) {
+
         switch (input) {
             case 'w' -> player.move(0, -1);
             case 's' -> player.move(0, 1);
@@ -127,18 +140,29 @@ public class GameLoop extends Thread {
         }
     }
 
-    private void updateEntities() {
-        List<Entity> snapshot = new ArrayList<>(entities);
+    private void showLevelStats() {
 
-        for (Entity e : snapshot) {
-            e.update(hardMode);
-            if (e.isDestroyed()) {
-                entities.remove(e);
-                if (e instanceof EnemyTank) {
-                    enemies.remove(e);
-                    kills++;
-                }
+        clearScreen();
+        System.out.println("=== LEVEL " + level + " ===");
+        System.out.println("Score: " + getScore());
+        System.out.println("Kills: " + kills);
+        System.out.println("Next enemy tanks: " + tankCount);
+        System.out.println("Health: " + player.getHealth());
+        System.out.println();
+        System.out.println("Press SPACE to continue");
+    }
+
+    private int getScore() {
+        return kills * 100 + level * 50;
+    }
+
+    private void waitForSpace() {
+
+        while (true) {
+            if (input.poll() == ' ') {
+                break;
             }
+            sleepLoop(30);
         }
     }
 

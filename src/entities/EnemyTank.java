@@ -46,6 +46,7 @@ public class EnemyTank extends Tank implements Runnable {
             sleepAI(60);
         }
     }
+    
 
     private void detectPlayerLine() {
         List<Entity> copy = List.copyOf(entities);
@@ -116,6 +117,10 @@ public class EnemyTank extends Tank implements Runnable {
         }
 
         moveCooldown = 5;
+    }
+
+    public void stopAI() {
+        running = false;
     }
 
     private void sleepAI(int ms) {
