@@ -1,7 +1,6 @@
 package entities;
 
 import world.Map;
-import entities.Tank;
 import java.util.List;
 
 public class Bullet extends Entity {
