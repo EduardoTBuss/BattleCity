@@ -184,7 +184,7 @@ BattleCity/
 
 ### Diagrama de Classes Completo
 
-![Diagrama de Classes](docs/Diagrama_classe_Battle-City.png)
+![Diagrama de Classes](docs/Diagrama_classe_Battle-City.jpeg)
 
 O diagrama acima mostra a arquitetura completa do projeto, incluindo todos os relacionamentos entre as classes, atributos e métodos.
 
